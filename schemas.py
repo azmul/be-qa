@@ -37,3 +37,11 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: str | None = None
+    
+class Question(BaseModel):
+    question: str
+    lang: str
+    
+class Sentence(BaseModel):
+    sentence: str
+    lang: str

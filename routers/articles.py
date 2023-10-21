@@ -6,7 +6,7 @@ from oauth2 import get_current_user
 import models, schemas, database
 
 router = APIRouter(
-    prefix="/articles",
+    prefix="/api/v1/articles",
     tags=['Articles']
 )
 

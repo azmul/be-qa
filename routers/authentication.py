@@ -4,12 +4,13 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 from hashing import Hash
 import JWTtoken
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 
 
 import models, schemas, database
 
 router = APIRouter(
+    prefix="/api/v1",
     tags=['Authentication']
 )
 
