@@ -10,7 +10,6 @@ from fastapi.security import OAuth2PasswordRequestForm
 import models, schemas, database
 
 router = APIRouter(
-    prefix="/api/v1",
     tags=['Authentication']
 )
 

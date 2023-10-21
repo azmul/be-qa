@@ -39,6 +39,7 @@ class TokenData(BaseModel):
     email: str | None = None
     
 class Question(BaseModel):
+    id: int
     question: str
     lang: str
     

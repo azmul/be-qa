@@ -6,7 +6,6 @@ from googletrans import Translator
 from oauth2 import get_current_user
 import models, schemas, database
 
-
 router = APIRouter(
     prefix="/api/v1/answers",
     tags=["Answers"],
@@ -21,21 +20,22 @@ model_name = "deepset/roberta-base-squad2"
 # download model
 qa_model = pipeline('question-answering', model=model_name, tokenizer=model_name)
 
-# test model
-context = "Monstarlab is a global digital consulting firm and software firm that specializes in strategy, design, and technology. Originating from Japan, the company has expanded its reach with offices around the world. Monstarlab has 1000 employees? Monstarlab offers a wide array of services, ranging from digital product development, UX/UI design, and digital transformation strategies, to name a few. Their team consists of engineers, designers, and consultants who collaborate to create innovative digital solutions tailored to their clients' unique challenges. As digital transformation continues to be a priority for businesses across industries, Monstarlab's expertise positions them as a notable player in the global market, helping brands navigate the complexities of the digital landscape"
-
 # GET Answer by User ID
-@router.get("/{id}", status_code=status.HTTP_200_OK, response_model=schemas.ShowUser)
-async def get_answer_by_user(id: int, db: db_dependency, current_user: schemas.User = Depends(get_current_user)):
-    user = db.query(models.User).filter(models.User.id == id).first()
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return user
-
-@router.post("/")
-async def get_answer(params: schemas.Question):
+@router.post("/", status_code=status.HTTP_200_OK)
+async def get_answer(params: schemas.Question, db: db_dependency):
+    articles = db.query(models.Article).filter(models.Article.user_id == params.id).all()
+    if articles is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Articles not found")
+    
+    user_context = ""
+    for article in articles:
+       user_context += article.content  
+       
+    if not user_context:
+       raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User context not found") 
+    
     q_translation = translator.translate(params.question, dest="en")
-    qa_response = qa_model(question = q_translation.text, context = context)
+    qa_response = qa_model(question = q_translation.text, context = user_context)
     translation = translator.translate(qa_response["answer"], dest=params.lang)
     return {"answer": translation.text, "lang": params.lang, "score": qa_response["score"]}
 
