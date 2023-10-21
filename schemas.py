@@ -11,6 +11,7 @@ class ShowArticleUser(BaseModel):
     email: str
 
 class Article(BaseModel):
+    id: int
     title: str
     content: str
     user_id: int
@@ -22,6 +23,7 @@ class ShowUser(BaseModel):
     articles: list[Article]
     
 class ShowArticle(BaseModel):
+    id: int
     title: str
     content: str
     user: ShowArticleUser

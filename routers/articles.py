@@ -15,7 +15,7 @@ db_dependency = Annotated[Session, Depends(database.get_db)]
 # CREATE Article
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_article(article: schemas.Article, db: db_dependency):
-    new_article = models.Article(**article.dict())
+    new_article = models.Article(user_id=article.user_id, title=article.title, content=article.content)
     db.add(new_article)
     db.commit()
     db.refresh(new_article)
