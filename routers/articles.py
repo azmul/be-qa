@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from typing import Annotated
 from oauth2 import get_current_user
-
+from database import engine
 import models, schemas, database
 
 router = APIRouter(
@@ -36,14 +36,19 @@ async def read_article(id: int, db: db_dependency):
     return article
 
 # UPDATE Article by ID 
-@router.put("/{id}", status_code=status.HTTP_202_ACCEPTED)
-async def update_article(id:int, article: schemas.Article, db: db_dependency): 
-    article = db.query(models.Article).filter(models.Article.id == id).first()
-    if article is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Article not found")
-    db.update(article.dict())
-    db.commit()
-    return "Updated" 
+@router.patch("/{id}", status_code=status.HTTP_202_ACCEPTED)
+async def update_article(id:int, article: schemas.ArticleEdit, db: db_dependency): 
+    with Session(engine) as session:
+        db_article = session.get(models.Article, id)
+        if not db_article:
+           raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Article not found")
+        article_data = article.dict(exclude_unset=True)
+        for key, value in article_data.items():
+            setattr(db_article, key, value)
+        session.add(db_article)
+        session.commit()
+        session.refresh(db_article)
+        return db_article
 
 # DELETE Article by ID 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)

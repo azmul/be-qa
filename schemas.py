@@ -11,6 +11,15 @@ class ShowArticleUser(BaseModel):
     email: str
 
 class Article(BaseModel):
+    title: str
+    content: str
+    user_id: int
+    
+class ArticleEdit(BaseModel):
+    title: str
+    content: str
+    
+class ShowUserArticle(BaseModel):
     id: int
     title: str
     content: str
@@ -20,7 +29,7 @@ class ShowUser(BaseModel):
     id: int
     name: str
     email: str
-    articles: list[Article]
+    articles: list[ShowUserArticle]
     
 class ShowArticle(BaseModel):
     id: int
