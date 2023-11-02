@@ -1,6 +1,10 @@
 from __future__ import annotations
 from pydantic import BaseModel
 
+class Login(BaseModel):
+    username: str
+    password: str
+    
 class User(BaseModel):
     name: str
     email: str
@@ -45,6 +49,12 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    id: int
+    username: str
+    name: str
 
 class TokenData(BaseModel):
     email: str | None = None

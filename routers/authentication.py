@@ -5,8 +5,6 @@ from typing import Annotated
 from hashing import Hash
 import JWTtoken
 from fastapi.security import OAuth2PasswordRequestForm
-
-
 import models, schemas, database
 
 router = APIRouter(
@@ -15,7 +13,7 @@ router = APIRouter(
 
 db_dependency = Annotated[Session, Depends(database.get_db)]
 
-@router.post("/login", response_model=schemas.Token)
+@router.post("/login", response_model=schemas.LoginResponse)
 async def login(request: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
     user = db.query(models.User).filter(models.User.email == request.username).first()
     if user is None:
@@ -29,4 +27,4 @@ async def login(request: Annotated[OAuth2PasswordRequestForm, Depends()], db: db
     access_token = JWTtoken.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "id": user.id, "username": user.email, "name": user.name }
