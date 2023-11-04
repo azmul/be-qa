@@ -15,10 +15,12 @@ db_dependency = Annotated[Session, Depends(database.get_db)]
 
 translator = Translator()
 
-model_name = "deepset/roberta-base-squad2"
-
 # download model
-qa_model = pipeline('question-answering', model=model_name, tokenizer=model_name)
+# qa_model_bert = pipeline('question-answering', model="bert-large-uncased-whole-word-masking-finetuned-squad")
+# qa_model_timpal = pipeline('question-answering', model="timpal0l/mdeberta-v3-base-squad2")
+qa_model_roberta = pipeline('question-answering', model="deepset/roberta-base-squad2")
+qa_model_distilbert = pipeline('question-answering', model="distilbert-base-uncased-distilled-squad")
+qa_model_deepset_bert = pipeline('question-answering', model="deepset/bert-large-uncased-whole-word-masking-squad2")
 
 # GET Answer by User ID
 @router.post("/", status_code=status.HTTP_200_OK)
@@ -34,10 +36,24 @@ async def get_answer(params: schemas.Question, db: db_dependency):
     if not user_context:
        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User context not found") 
     
+
     q_translation = translator.translate(params.question, dest="en")
-    qa_response = qa_model(question = q_translation.text, context = user_context)
-    translation = translator.translate(qa_response["answer"], dest=params.lang)
-    return {"answer": translation.text, "lang": params.lang, "score": qa_response["score"]}
+    
+    # qa_response_timpal = qa_model_timpal(question = q_translation.text, context = user_context)
+    # qa_response_bert = qa_model_bert(question = q_translation.text, context = user_context)
+    qa_response_roberta = qa_model_roberta(question = q_translation.text, context = user_context)
+    qa_response_roberta["model"] = "roberta"
+    
+    qa_response_distilbert = qa_model_distilbert(question = q_translation.text, context = user_context)
+    qa_response_distilbert["model"] = "distilbert"
+    
+    qa_response_deepset_bert = qa_model_deepset_bert(question = q_translation.text, context = user_context)
+    qa_response_deepset_bert["model"] = "deepset_bert"
+
+
+    # translation = translator.translate(qa_response_roberta["answer"], dest=params.lang)
+    # return {"answer": translation.text, "lang": params.lang}
+    return { "data": [qa_response_deepset_bert,  qa_response_roberta, qa_response_distilbert]}
 
 @router.post("/translate")
 async def translate(params: schemas.Sentence):
