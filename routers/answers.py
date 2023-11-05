@@ -5,6 +5,7 @@ from transformers import pipeline
 from googletrans import Translator
 from oauth2 import get_current_user
 import models, schemas, database
+from cdifflib import CSequenceMatcher
 
 router = APIRouter(
     prefix="/api/v1/answers",
@@ -14,6 +15,9 @@ router = APIRouter(
 db_dependency = Annotated[Session, Depends(database.get_db)]
 
 translator = Translator()
+
+# Define the property of interest (in this case, "age")
+property_of_interest = "answer"
 
 # download model
 # qa_model_bert = pipeline('question-answering', model="bert-large-uncased-whole-word-masking-finetuned-squad")
@@ -41,25 +45,40 @@ async def get_answer(params: schemas.Question, db: db_dependency):
     
     # qa_response_timpal = qa_model_timpal(question = q_translation.text, context = user_context)
     # qa_response_bert = qa_model_bert(question = q_translation.text, context = user_context)
-    qa_response_roberta = qa_model_roberta(question = q_translation.text, context = user_context)
-    translation_roberta = translator.translate(qa_response_roberta["answer"], dest=params.lang)
-    qa_response_roberta["translate_text"] = translation_roberta.text
-    qa_response_roberta["model"] = "roberta"
-    
+    qa_response_roberta = qa_model_roberta(question = q_translation.text, context = user_context) 
     qa_response_distilbert = qa_model_distilbert(question = q_translation.text, context = user_context)
-    translation_distilbert = translator.translate(qa_response_distilbert["answer"], dest=params.lang)
-    qa_response_distilbert["translate_text"] = translation_distilbert.text
-    qa_response_distilbert["model"] = "distilbert"
-    
     qa_response_deepset_bert = qa_model_deepset_bert(question = q_translation.text, context = user_context)
-    translation_deepset_bert = translator.translate(qa_response_deepset_bert["answer"], dest=params.lang)
-    qa_response_deepset_bert["translate_text"] = translation_deepset_bert.text
-    qa_response_deepset_bert["model"] = "deepset_bert"
 
+    results = [qa_response_deepset_bert,  qa_response_roberta, qa_response_distilbert]
+    # print(results)
+    
+    # Find the minimum value of the property using the min() function
+    min_value = min(results, key=lambda x: len(x[property_of_interest]))[property_of_interest]
+ 
+    # Filter out objects with the minimum property value
+    filtered_results = [obj for obj in results if obj[property_of_interest] != min_value]
+    
+    calculated_results = []
+    
+    if not filtered_results:
+        calculated_results = results
+    else:
+        calculated_results = filtered_results
+    
+    max_result = max(calculated_results, key=lambda x: len(x[property_of_interest]))
+    min_result = min(calculated_results, key=lambda x: len(x[property_of_interest]))
+    
+    s = CSequenceMatcher(None, max_result["answer"], min_result["answer"])
+    ratio = round(s.ratio(), 3) * 100
+    
+    text = ""
+    if ratio < 60:
+        text = max_result["answer"] + ". " + min_result["answer"]
+    else:
+        text = max_result["answer"]
 
-    # translation = translator.translate(qa_response_roberta["answer"], dest=params.lang)
-    # return {"answer": translation.text, "lang": params.lang}
-    return { "data": [qa_response_deepset_bert,  qa_response_roberta, qa_response_distilbert]}
+    translation = translator.translate(text, dest=params.lang)
+    return {"answer": translation.text, "lang": params.lang}
 
 @router.post("/translate")
 async def translate(params: schemas.Sentence):

@@ -9,3 +9,4 @@ transformers
 googletrans
 requests
 sentence_transformers
+cdifflib
